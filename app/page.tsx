@@ -1,9 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { db } from '@/lib/firebase'
 import { ref, get } from 'firebase/database'
-import { setSession, type User } from '@/lib/auth'
+import { getSession, setSession, type User } from '@/lib/auth'
 import { log } from '@/lib/logger'
 
 export default function LoginPage() {
@@ -12,6 +12,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
+  const [checking, setChecking] = useState(true)
+
+  // Auto-login: if session exists, redirect without showing the form
+  useEffect(() => {
+    const session = getSession()
+    if (session) {
+      if (session.role === 'relayn') router.replace('/availability')
+      else                           router.replace('/dashboard')
+    } else {
+      setChecking(false)
+    }
+  }, [])
 
   async function handleLogin() {
     setError('')
@@ -46,6 +58,19 @@ export default function LoginPage() {
     }
     setLoading(false)
   }
+
+  if (checking) return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-14 h-14 rounded-2xl bg-brand-500 flex items-center justify-center animate-pulse">
+          <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400">טוען...</p>
+      </div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100 dark:from-gray-900 dark:to-gray-800">
