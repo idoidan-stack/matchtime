@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { db } from '@/lib/firebase'
 import { ref, set, onValue, push, get } from 'firebase/database'
 import { getSession, clearSession, type User } from '@/lib/auth'
+import { log } from '@/lib/logger'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval,
          getDay, addMonths, subMonths, isToday, isBefore, startOfDay } from 'date-fns'
 import { he } from 'date-fns/locale'
@@ -44,7 +45,10 @@ export default function DashboardPage() {
   const [showModal, setShowModal]       = useState(false)
   const [startTime, setStartTime]       = useState('')
   const [endTime, setEndTime]           = useState('')
-  const [submitting, setSubmitting]     = useState(false)
+  const [submitting, setSubmitting]       = useState(false)
+  const [showSettingsModal, setShowSettingsModal] = useState(false)
+  const [settingsPwd, setSettingsPwd]   = useState('')
+  const [settingsErr, setSettingsErr]   = useState('')
 
   const monthKey        = format(currentMonth, 'yyyy-MM')
   const historyMonthKey = format(historyMonth, 'yyyy-MM')
@@ -181,6 +185,27 @@ export default function DashboardPage() {
     await set(ref(db, `matchtime/requests/${reqId}/status`), 'cancelled')
   }
 
+  function getGreeting() {
+    const h = new Date().getHours()
+    if (h < 12) return 'בוקר טוב ☀️'
+    if (h < 17) return 'צהריים טובים 🌤️'
+    return 'ערב טוב 🌙'
+  }
+
+  function openSettings() {
+    setSettingsPwd(''); setSettingsErr(''); setShowSettingsModal(true)
+  }
+
+  function checkSettingsPassword() {
+    if (settingsPwd === '300395860') {
+      localStorage.setItem('settings_unlocked', 'true')
+      log('settings_accessed', 'גישה להגדרות מערכת', session?.name)
+      router.push('/admin')
+    } else {
+      setSettingsErr('סיסמה שגויה')
+    }
+  }
+
   function toggleDark() {
     const next = !darkMode
     setDarkMode(next)
@@ -205,7 +230,9 @@ export default function DashboardPage() {
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="animate-fade-up">
           <h1 className="text-lg font-bold text-gray-900 dark:text-white">MatchTime</h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{session?.name}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            שלום {session?.name} · {getGreeting()}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {/* Install PWA */}
@@ -218,6 +245,15 @@ export default function DashboardPage() {
               התקן אפליקציה
             </button>
           )}
+          {/* Settings gear */}
+          <button onClick={openSettings}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
           {/* Dark mode toggle */}
           <button onClick={toggleDark}
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400">
@@ -475,6 +511,43 @@ export default function DashboardPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ══ SETTINGS MODAL ══ */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-sm p-6 animate-pop-in">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <svg className="w-5 h-5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                הגדרות מערכת
+              </h3>
+              <button onClick={() => setShowSettingsModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600">✕</button>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">הכנס סיסמת מנהל לגישה להגדרות</p>
+            <input
+              type="password"
+              value={settingsPwd}
+              onChange={e => { setSettingsPwd(e.target.value); setSettingsErr('') }}
+              onKeyDown={e => e.key === 'Enter' && checkSettingsPassword()}
+              autoFocus
+              className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 text-center text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-brand-500 mb-3"
+              placeholder="••••••••••"
+            />
+            {settingsErr && (
+              <p className="text-red-500 text-sm text-center mb-3 animate-fade-up">{settingsErr}</p>
+            )}
+            <button onClick={checkSettingsPassword}
+              className="w-full bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-semibold rounded-xl py-2.5 transition-all">
+              כניסה להגדרות
+            </button>
+          </div>
         </div>
       )}
 

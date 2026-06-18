@@ -31,7 +31,8 @@ export default function AdminPage() {
   const [msg, setMsg]       = useState('')
 
   useEffect(() => {
-    if (!session || session.role !== 'system_admin') { router.push('/'); return }
+    const unlocked = typeof window !== 'undefined' && localStorage.getItem('settings_unlocked') === 'true'
+    if (!session || !unlocked) { router.push('/'); return }
     loadUsers()
   }, [])
 
@@ -93,10 +94,16 @@ export default function AdminPage() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">ניהול מערכת — MatchTime</h1>
-        <button onClick={() => { clearSession(); router.push('/') }}
-          className="text-sm text-gray-500 hover:text-red-600">
-          התנתק
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.push('/admin/logs')}
+            className="text-sm text-brand-600 hover:text-brand-800 font-medium flex items-center gap-1">
+            📋 לוגים
+          </button>
+          <button onClick={() => { localStorage.removeItem('settings_unlocked'); clearSession(); router.push('/') }}
+            className="text-sm text-gray-500 hover:text-red-600">
+            התנתק
+          </button>
+        </div>
       </header>
 
       <div className="max-w-4xl mx-auto p-6">
