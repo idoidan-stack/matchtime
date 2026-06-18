@@ -5,7 +5,19 @@ export const metadata: Metadata = {
   title: 'MatchTime',
   description: 'תיאום פגישות Reline × Partner',
   manifest: '/manifest.json',
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'MatchTime' },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'MatchTime',
+    startupImage: '/apple-touch-icon.png',
+  },
+  icons: {
+    apple: '/apple-touch-icon.png',
+    icon: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+  },
 }
 
 export const viewport: Viewport = {
