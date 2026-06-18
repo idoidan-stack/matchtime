@@ -9,6 +9,103 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval,
          getDay, addMonths, subMonths, isToday, isBefore, startOfDay } from 'date-fns'
 import { he } from 'date-fns/locale'
 
+// ── Day panel (shared between desktop side-panel and mobile bottom-sheet) ──
+function DayPanel({ selectedDay, selectedDayRequests, getPersonDayStatus, getAvailableSlots, dayReqs, canCancel, cancelRequest, setShowModal, setSelectedDay }: {
+  selectedDay: string
+  selectedDayRequests: any[]
+  getPersonDayStatus: (p: Person, d: string) => 'full' | 'partial' | 'empty'
+  getAvailableSlots: (p: Person, d: string) => string[]
+  dayReqs: (d: string) => any[]
+  canCancel: (r: any) => boolean
+  cancelRequest: (id: string) => void
+  setShowModal: (v: boolean) => void
+  setSelectedDay: (v: string | null) => void
+}) {
+  return (
+    <>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-gray-900 dark:text-white">
+            {format(new Date(selectedDay), 'EEEE, d MMMM yyyy', { locale: he })}
+          </h3>
+          <button onClick={() => setSelectedDay(null)}
+            className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 text-sm">✕</button>
+        </div>
+
+        {(['ido','ofek'] as Person[]).map(person => {
+          const slots  = getAvailableSlots(person, selectedDay)
+          const status = getPersonDayStatus(person, selectedDay)
+          const occupied = dayReqs(selectedDay).filter((r: any) => r.person === person && r.status === 'approved')
+          return (
+            <div key={person} className="mb-4 last:mb-0 pb-4 last:pb-0 border-b last:border-0 border-gray-100 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{PERSON_LABELS[person]}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                  status === 'full'    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
+                  status === 'partial' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300' :
+                  'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                }`}>
+                  {status === 'full' ? 'פנוי מלא' : status === 'partial' ? 'פנוי חלקי' : 'לא פנוי'}
+                </span>
+              </div>
+              {occupied.length > 0 && (
+                <div className="mb-1 flex flex-wrap gap-1">
+                  {occupied.map((r: any) => (
+                    <span key={r.id} className="text-xs bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 px-2 py-0.5 rounded line-through">
+                      {r.startTime}–{r.endTime}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {slots.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {slots.map(s => (
+                    <span key={s} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">{s}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {(getPersonDayStatus('ido', selectedDay) !== 'empty' || getPersonDayStatus('ofek', selectedDay) !== 'empty') && (
+          <button onClick={() => setShowModal(true)}
+            className="w-full mt-3 bg-brand-500 hover:bg-brand-600 active:scale-95 text-white rounded-xl py-3 text-sm font-semibold shadow-sm transition-all">
+            + שלח בקשת תיאום
+          </button>
+        )}
+      </div>
+
+      {selectedDayRequests.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm mt-3">
+          <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 text-sm">בקשות ליום זה</h4>
+          <div className="space-y-2">
+            {selectedDayRequests.map((req: any) => (
+              <div key={req.id} className="border border-gray-100 dark:border-gray-700 rounded-xl p-3 bg-gray-50 dark:bg-gray-750">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {PERSON_LABELS[req.person as Person]} · {req.startTime}–{req.endTime}
+                  </span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[req.status] ?? 'bg-gray-100 text-gray-500'}`}>
+                    {STATUS_LABELS[req.status] ?? req.status}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">מאת: {req.requestedBy}</p>
+                {canCancel(req) && (
+                  <button onClick={() => cancelRequest(req.id)}
+                    className="mt-1.5 text-xs text-red-500 hover:text-red-700 font-medium">
+                    ביטול ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
 const HOURS = Array.from({ length: 22 }, (_, i) => {
   const h = Math.floor(i / 2) + 8
   const m = i % 2 === 0 ? '00' : '30'
@@ -309,7 +406,7 @@ export default function DashboardPage() {
 
       {/* ══ CALENDAR TAB ══ */}
       {tab === 'calendar' && (
-        <div className="max-w-5xl mx-auto p-4 flex gap-4 animate-fade-up">
+        <div className="max-w-5xl mx-auto p-4 md:flex gap-4 animate-fade-up">
           <div className="flex-1">
             {/* Month nav */}
             <div className="flex items-center justify-between mb-4">
@@ -390,87 +487,49 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* ── Side panel ── */}
+          {/* ── Side panel (desktop) ── */}
           {selectedDay && (
-            <div className="w-80 self-start sticky top-4 space-y-3 animate-slide-right">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-                <h3 className="font-bold text-gray-900 dark:text-white mb-4">
-                  {format(new Date(selectedDay), 'EEEE, d MMMM yyyy', { locale: he })}
-                </h3>
-
-                {(['ido','ofek'] as Person[]).map(person => {
-                  const slots  = getAvailableSlots(person, selectedDay)
-                  const status = getPersonDayStatus(person, selectedDay)
-                  const occupied = dayReqs(selectedDay).filter(r => r.person === person && r.status === 'approved')
-                  return (
-                    <div key={person} className="mb-4 last:mb-0 pb-4 last:pb-0 border-b last:border-0 border-gray-100 dark:border-gray-700">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{PERSON_LABELS[person]}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          status === 'full'    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
-                          status === 'partial' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300' :
-                          'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                        }`}>
-                          {status === 'full' ? 'פנוי מלא' : status === 'partial' ? 'פנוי חלקי' : 'לא פנוי'}
-                        </span>
-                      </div>
-                      {occupied.length > 0 && (
-                        <div className="mb-1 flex flex-wrap gap-1">
-                          {occupied.map(r => (
-                            <span key={r.id} className="text-xs bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 px-2 py-0.5 rounded line-through">
-                              {r.startTime}–{r.endTime}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {slots.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {slots.map(s => (
-                            <span key={s} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">{s}</span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-
-                {(getPersonDayStatus('ido', selectedDay) !== 'empty' || getPersonDayStatus('ofek', selectedDay) !== 'empty') && (
-                  <button onClick={() => setShowModal(true)}
-                    className="w-full mt-3 bg-brand-500 hover:bg-brand-600 active:scale-95 text-white rounded-xl py-2.5 text-sm font-semibold shadow-sm transition-all">
-                    + שלח בקשת תיאום
-                  </button>
-                )}
-              </div>
-
-              {selectedDayRequests.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-                  <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 text-sm">בקשות ליום זה</h4>
-                  <div className="space-y-2 stagger">
-                    {selectedDayRequests.map((req: any) => (
-                      <div key={req.id} className="animate-fade-up border border-gray-100 dark:border-gray-700 rounded-xl p-3 bg-gray-50 dark:bg-gray-750">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {PERSON_LABELS[req.person as Person]} · {req.startTime}–{req.endTime}
-                          </span>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[req.status] ?? 'bg-gray-100 text-gray-500'}`}>
-                            {STATUS_LABELS[req.status] ?? req.status}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">מאת: {req.requestedBy}</p>
-                        {canCancel(req) && (
-                          <button onClick={() => cancelRequest(req.id)}
-                            className="mt-1.5 text-xs text-red-500 hover:text-red-700 font-medium">
-                            ביטול ✕
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="hidden md:block w-80 self-start sticky top-4 space-y-3 animate-slide-right">
+              <DayPanel
+                selectedDay={selectedDay}
+                selectedDayRequests={selectedDayRequests}
+                getPersonDayStatus={getPersonDayStatus}
+                getAvailableSlots={getAvailableSlots}
+                dayReqs={dayReqs}
+                canCancel={canCancel}
+                cancelRequest={cancelRequest}
+                setShowModal={setShowModal}
+                setSelectedDay={setSelectedDay}
+              />
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Bottom sheet (mobile) ── */}
+      {tab === 'calendar' && selectedDay && (
+        <>
+          <div className="md:hidden fixed inset-0 bg-black/40 z-40" onClick={() => setSelectedDay(null)} />
+          <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white dark:bg-gray-800 rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto animate-slide-up">
+            {/* Handle bar */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+            </div>
+            <div className="px-4 pb-8">
+              <DayPanel
+                selectedDay={selectedDay}
+                selectedDayRequests={selectedDayRequests}
+                getPersonDayStatus={getPersonDayStatus}
+                getAvailableSlots={getAvailableSlots}
+                dayReqs={dayReqs}
+                canCancel={canCancel}
+                cancelRequest={cancelRequest}
+                setShowModal={setShowModal}
+                setSelectedDay={setSelectedDay}
+              />
+            </div>
+          </div>
+        </>
       )}
 
       {/* ══ HISTORY TAB ══ */}

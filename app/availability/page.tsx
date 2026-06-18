@@ -17,6 +17,79 @@ const HOURS = Array.from({ length: 23 }, (_, i) => {
 
 type DaySlots = Record<string, boolean> // "08:00" => true/false
 
+// ── Slots panel (shared between desktop side-panel and mobile bottom-sheet) ──
+function SlotsPanel({ selectedDay, slots, dragging, dragValue, saving, setDragging, setDragValue, toggleSlot, selectAllDay, clearDay, saveDay, setSelectedDay }: {
+  selectedDay: string
+  slots: Record<string, DaySlots>
+  dragging: boolean
+  dragValue: boolean
+  saving: boolean
+  setDragging: (v: boolean) => void
+  setDragValue: (v: boolean) => void
+  toggleSlot: (h: string, force?: boolean) => void
+  selectAllDay: () => void
+  clearDay: () => void
+  saveDay: () => void
+  setSelectedDay: (v: string | null) => void
+}) {
+  return (
+    <>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold text-gray-900 dark:text-white text-base">
+          {format(new Date(selectedDay), 'EEEE, d MMMM', { locale: he })}
+        </h3>
+        <button onClick={() => setSelectedDay(null)}
+          className="text-gray-400 hover:text-gray-600 w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-sm">✕</button>
+      </div>
+
+      <div className="flex gap-2 mb-3">
+        <button onClick={selectAllDay}
+          className="flex-1 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg py-2 hover:bg-emerald-100 font-medium">
+          בחר הכל
+        </button>
+        <button onClick={clearDay}
+          className="flex-1 text-xs bg-red-50 text-red-600 border border-red-200 rounded-lg py-2 hover:bg-red-100 font-medium">
+          נקה הכל
+        </button>
+      </div>
+
+      <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">לחץ לסימון / בטל</p>
+
+      <div
+        className="grid grid-cols-3 gap-1.5 max-h-64 overflow-y-auto"
+        onMouseLeave={() => setDragging(false)}
+      >
+        {HOURS.map(hour => {
+          const active = slots[selectedDay]?.[hour] ?? false
+          return (
+            <button
+              key={hour}
+              onMouseDown={() => { setDragging(true); setDragValue(!active); toggleSlot(hour, !active) }}
+              onMouseEnter={() => { if (dragging) toggleSlot(hour, dragValue) }}
+              onMouseUp={() => setDragging(false)}
+              onClick={() => toggleSlot(hour)}
+              className={`
+                text-xs rounded-xl py-2.5 border transition-colors select-none font-medium
+                ${active
+                  ? 'bg-brand-500 border-brand-600 text-white shadow-sm'
+                  : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100'
+                }
+              `}
+            >
+              {hour}
+            </button>
+          )
+        })}
+      </div>
+
+      <button onClick={saveDay} disabled={saving}
+        className="w-full mt-4 bg-brand-500 hover:bg-brand-600 text-white rounded-xl py-3 text-sm font-semibold disabled:opacity-50 transition-all active:scale-95 shadow-sm">
+        {saving ? 'שומר...' : '✓ שמור יום'}
+      </button>
+    </>
+  )
+}
+
 export default function AvailabilityPage() {
   const router  = useRouter()
   const session = typeof window !== 'undefined' ? getSession() : null
@@ -183,7 +256,7 @@ export default function AvailabilityPage() {
       </div>
 
       {tab === 'availability' ? (
-        <div className="max-w-5xl mx-auto p-6 flex gap-6">
+        <div className="max-w-5xl mx-auto p-4 md:p-6 md:flex gap-6">
           {/* Calendar */}
           <div className="flex-1">
             {/* Month nav */}
@@ -254,70 +327,57 @@ export default function AvailabilityPage() {
             </div>
           </div>
 
-          {/* Time slots panel */}
+          {/* Time slots panel — desktop */}
           {selectedDay && (
-            <div className="w-72 bg-white rounded-xl border border-gray-200 p-4 self-start sticky top-6">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-900">
-                  {format(new Date(selectedDay), 'd MMMM', { locale: he })}
-                </h3>
-                <button onClick={() => setSelectedDay(null)}
-                  className="text-gray-400 hover:text-gray-600">✕</button>
-              </div>
-
-              <div className="flex gap-2 mb-3">
-                <button onClick={selectAllDay}
-                  className="flex-1 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg py-1.5 hover:bg-emerald-100">
-                  בחר הכל
-                </button>
-                <button onClick={clearDay}
-                  className="flex-1 text-xs bg-red-50 text-red-600 border border-red-200 rounded-lg py-1.5 hover:bg-red-100">
-                  נקה הכל
-                </button>
-              </div>
-
-              <p className="text-xs text-gray-400 mb-2">לחץ או גרור לסימון מרובה</p>
-
-              <div
-                className="grid grid-cols-2 gap-1 max-h-80 overflow-y-auto"
-                onMouseLeave={() => setDragging(false)}
-              >
-                {HOURS.map(hour => {
-                  const active = slots[selectedDay]?.[hour] ?? false
-                  return (
-                    <button
-                      key={hour}
-                      onMouseDown={() => {
-                        setDragging(true)
-                        setDragValue(!active)
-                        toggleSlot(hour, !active)
-                      }}
-                      onMouseEnter={() => {
-                        if (dragging) toggleSlot(hour, dragValue)
-                      }}
-                      onMouseUp={() => setDragging(false)}
-                      className={`
-                        text-xs rounded-lg py-1.5 px-2 border transition-colors select-none
-                        ${active
-                          ? 'bg-brand-500 border-brand-600 text-white'
-                          : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                        }
-                      `}
-                    >
-                      {hour}
-                    </button>
-                  )
-                })}
-              </div>
-
-              <button onClick={saveDay} disabled={saving}
-                className="w-full mt-4 bg-brand-500 hover:bg-brand-600 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50">
-                {saving ? 'שומר...' : 'שמור יום'}
-              </button>
+            <div className="hidden md:block w-72 bg-white rounded-xl border border-gray-200 p-4 self-start sticky top-6">
+              <SlotsPanel
+                selectedDay={selectedDay}
+                slots={slots}
+                dragging={dragging}
+                dragValue={dragValue}
+                saving={saving}
+                setDragging={setDragging}
+                setDragValue={setDragValue}
+                toggleSlot={toggleSlot}
+                selectAllDay={selectAllDay}
+                clearDay={clearDay}
+                saveDay={saveDay}
+                setSelectedDay={setSelectedDay}
+              />
             </div>
           )}
         </div>
-      ) : (
+      ) : null}
+
+      {/* Time slots — mobile bottom sheet */}
+      {tab === 'availability' && selectedDay && (
+        <>
+          <div className="md:hidden fixed inset-0 bg-black/40 z-40" onClick={() => setSelectedDay(null)} />
+          <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white dark:bg-gray-800 rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto animate-slide-up">
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+            </div>
+            <div className="px-4 pb-8">
+              <SlotsPanel
+                selectedDay={selectedDay}
+                slots={slots}
+                dragging={dragging}
+                dragValue={dragValue}
+                saving={saving}
+                setDragging={setDragging}
+                setDragValue={setDragValue}
+                toggleSlot={toggleSlot}
+                selectAllDay={selectAllDay}
+                clearDay={clearDay}
+                saveDay={saveDay}
+                setSelectedDay={setSelectedDay}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {tab === 'approvals' && (
         /* Approvals tab */
         <div className="max-w-2xl mx-auto p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">בקשות תיאום</h2>
