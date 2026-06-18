@@ -114,7 +114,7 @@ export default function AvailabilityPage() {
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">MatchTime</h1>
-          <p className="text-sm text-gray-500">{session?.name} · Relayn</p>
+          <p className="text-sm text-gray-500">{session?.name} · Reline</p>
         </div>
         <button onClick={() => { clearSession(); router.push('/') }}
           className="text-sm text-gray-500 hover:text-red-600">התנתק</button>

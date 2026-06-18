@@ -316,7 +316,7 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {/* Person selector */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">בחר נציג Relayn</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">בחר נציג Reline</label>
                 <div className="flex gap-2">
                   {(['ido', 'ofek'] as Person[]).map(p => {
                     const status = getPersonDayStatus(p, selectedDay)

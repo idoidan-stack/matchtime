@@ -9,7 +9,7 @@ const ROLE_LABELS: Record<Role, string> = {
   sales_manager: 'מנהל מכירות',
   manager:       'מנהל',
   system_admin:  'מנהל מערכת',
-  relayn:        'Relayn',
+  relayn:        'Reline',
 }
 
 export default function AdminPage() {
@@ -121,7 +121,7 @@ export default function AdminPage() {
                   <th className="text-right px-4 py-3 font-medium text-gray-600">שם</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-600">שם משתמש</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-600">הרשאה</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-600">Relayn</th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-600">Reline</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -189,7 +189,7 @@ export default function AdminPage() {
               </div>
               {form.role === 'relayn' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">אדם ב-Relayn</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">אדם ב-Reline</label>
                   <select value={form.relayнPerson} onChange={e => setForm(f => ({...f, relayнPerson: e.target.value as 'ido' | 'ofek'}))}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-right focus:outline-none focus:ring-2 focus:ring-brand-500">
                     <option value="">בחר...</option>
