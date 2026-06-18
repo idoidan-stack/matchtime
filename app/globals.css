@@ -1,0 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+body { font-family: 'Inter', system-ui, sans-serif; direction: rtl; }
+
+.slot-available   { @apply bg-emerald-100 border-emerald-400 text-emerald-800; }
+.slot-selected    { @apply bg-brand-500 border-brand-600 text-white; }
+.slot-unavailable { @apply bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed; }
+
+.day-green  { @apply bg-emerald-100 border-2 border-emerald-400; }
+.day-yellow { @apply bg-yellow-100 border-2 border-yellow-400; }
+.day-red    { @apply bg-red-100 border-2 border-red-400; }
+.day-empty  { @apply bg-white border-2 border-gray-200; }
