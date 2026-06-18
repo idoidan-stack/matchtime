@@ -25,6 +25,7 @@ export default function AdminPage() {
     name: '', username: '', password: '',
     role: 'sales_manager' as Role,
     relayнPerson: '' as '' | 'ido' | 'ofek',
+    phone: '',
   })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg]       = useState('')
@@ -47,7 +48,7 @@ export default function AdminPage() {
 
   function openNew() {
     setEditUser(null)
-    setForm({ name: '', username: '', password: '', role: 'sales_manager', relayнPerson: '' })
+    setForm({ name: '', username: '', password: '', role: 'sales_manager', relayнPerson: '', phone: '' })
     setShowForm(true)
     setMsg('')
   }
@@ -56,7 +57,7 @@ export default function AdminPage() {
     setEditUser(u)
     setForm({
       name: u.name, username: u.username, password: u.password,
-      role: u.role, relayнPerson: u.relayнPerson ?? '',
+      role: u.role, relayнPerson: u.relayнPerson ?? '', phone: (u as any).phone ?? '',
     })
     setShowForm(true)
     setMsg('')
@@ -72,6 +73,7 @@ export default function AdminPage() {
       id, name: form.name, username: form.username,
       password: form.password, role: form.role,
       ...(form.role === 'relayn' && form.relayнPerson ? { relayнPerson: form.relayнPerson } : {}),
+      ...(form.phone ? { phone: form.phone } : {}),
     }
     await set(ref(db, `matchtime/users/${id}`), userData)
     setMsg('נשמר בהצלחה')
@@ -186,6 +188,12 @@ export default function AdminPage() {
                     <option key={k} value={k}>{v}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">טלפון (לSMS)</label>
+                <input value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-right focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  placeholder="05X-XXXXXXX" dir="ltr" />
               </div>
               {form.role === 'relayn' && (
                 <div>

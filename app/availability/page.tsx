@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { db } from '@/lib/firebase'
-import { ref, get, set, onValue } from 'firebase/database'
+import { ref, set, onValue } from 'firebase/database'
 import { getSession, clearSession } from '@/lib/auth'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval,
          getDay, addMonths, subMonths, isSameMonth, isToday, isBefore, startOfDay } from 'date-fns'
@@ -104,6 +104,20 @@ export default function AvailabilityPage() {
 
   async function handleRequest(reqId: string, action: 'approved' | 'rejected') {
     await set(ref(db, `matchtime/requests/${reqId}/status`), action)
+
+    // SMS to requesting person
+    const req = requests.find(r => r.id === reqId)
+    if (req?.requestedByPhone) {
+      const dateStr = format(new Date(req.date), 'd MMMM yyyy', { locale: he })
+      const msg = action === 'approved'
+        ? `✅ בקשתך לפגישה ב-${dateStr} ${req.startTime}–${req.endTime} אושרה!`
+        : `❌ בקשתך לפגישה ב-${dateStr} ${req.startTime}–${req.endTime} נדחתה.`
+      fetch('/api/sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: req.requestedByPhone, message: msg }),
+      }).catch(() => {})
+    }
   }
 
   const pendingCount = requests.filter(r => r.status === 'pending').length

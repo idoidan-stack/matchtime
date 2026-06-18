@@ -7,6 +7,7 @@ export interface User {
   password: string
   role: Role
   relayнPerson?: 'ido' | 'ofek' // only for relayn role
+  phone?: string
 }
 
 export interface Session {
@@ -15,6 +16,7 @@ export interface Session {
   name: string
   role: Role
   relayнPerson?: 'ido' | 'ofek'
+  phone?: string
 }
 
 export function getSession(): Session | null {
