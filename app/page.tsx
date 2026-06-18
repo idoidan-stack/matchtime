@@ -40,6 +40,7 @@ export default function LoginPage() {
         name:         user.name,
         role:         user.role,
         relayнPerson: user.relayнPerson,
+        phone:        (user as any).phone ?? '',
       })
 
       if (user.role === 'relayn')         router.push('/availability')
