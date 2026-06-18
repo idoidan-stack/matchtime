@@ -34,12 +34,11 @@ export default function AvailabilityPage() {
   const [settingsPwd, setSettingsPwd]   = useState('')
   const [settingsErr, setSettingsErr]   = useState('')
 
-  function getGreeting() {
+  const [greeting, setGreeting] = useState('')
+  useEffect(() => {
     const h = new Date().getHours()
-    if (h < 12) return 'בוקר טוב ☀️'
-    if (h < 17) return 'צהריים טובים 🌤️'
-    return 'ערב טוב 🌙'
-  }
+    setGreeting(h < 12 ? 'בוקר טוב ☀️' : h < 17 ? 'צהריים טובים 🌤️' : 'ערב טוב 🌙')
+  }, [])
 
   function checkSettingsPassword() {
     if (settingsPwd === '300395860') {
@@ -150,7 +149,7 @@ export default function AvailabilityPage() {
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">MatchTime</h1>
-          <p className="text-sm text-gray-500">שלום {session?.name} · {getGreeting()}</p>
+          <p className="text-sm text-gray-500">שלום {session?.name} · {greeting}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => { setSettingsPwd(''); setSettingsErr(''); setShowSettingsModal(true) }}

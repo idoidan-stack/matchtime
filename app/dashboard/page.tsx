@@ -35,6 +35,9 @@ export default function DashboardPage() {
   const [tab, setTab]                   = useState<'calendar' | 'history'>('calendar')
   const [darkMode, setDarkMode]         = useState(false)
   const [installPrompt, setInstallPrompt] = useState<any>(null)
+  const [installPlatform, setInstallPlatform] = useState<'ios' | 'other' | 'installed' | null>(null)
+  const [showInstallModal, setShowInstallModal] = useState(false)
+  const [greeting, setGreeting]         = useState('')
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [historyMonth, setHistoryMonth] = useState(new Date())
   const [selectedDay, setSelectedDay]   = useState<string | null>(null)
@@ -59,12 +62,28 @@ export default function DashboardPage() {
     if (!['sales_manager','manager','system_admin','relayn'].includes(session.role)) router.push('/')
   }, [])
 
-  // Dark mode init
+  // Dark mode + greeting + platform detection (all client-side, runs after mount)
   useEffect(() => {
     setDarkMode(document.documentElement.classList.contains('dark'))
+
+    // Greeting — must run on client to use local timezone
+    const h = new Date().getHours()
+    setGreeting(h < 12 ? 'בוקר טוב ☀️' : h < 17 ? 'צהריים טובים 🌤️' : 'ערב טוב 🌙')
+
+    // Platform detection for PWA install
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true
+    if (isStandalone) {
+      setInstallPlatform('installed')
+    } else if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+      setInstallPlatform('ios')
+    } else {
+      setInstallPlatform('other')
+    }
   }, [])
 
-  // PWA install prompt
+  // PWA install prompt (Android Chrome / Desktop)
   useEffect(() => {
     const handler = (e: any) => { e.preventDefault(); setInstallPrompt(e) }
     window.addEventListener('beforeinstallprompt', handler)
@@ -185,13 +204,6 @@ export default function DashboardPage() {
     await set(ref(db, `matchtime/requests/${reqId}/status`), 'cancelled')
   }
 
-  function getGreeting() {
-    const h = new Date().getHours()
-    if (h < 12) return 'בוקר טוב ☀️'
-    if (h < 17) return 'צהריים טובים 🌤️'
-    return 'ערב טוב 🌙'
-  }
-
   function openSettings() {
     setSettingsPwd(''); setSettingsErr(''); setShowSettingsModal(true)
   }
@@ -213,9 +225,13 @@ export default function DashboardPage() {
     localStorage.setItem('theme', next ? 'dark' : 'light')
   }
 
-  function installPWA() {
-    installPrompt?.prompt()
-    setInstallPrompt(null)
+  function handleInstall() {
+    if (installPrompt) {
+      installPrompt.prompt()
+      setInstallPrompt(null)
+    } else {
+      setShowInstallModal(true)
+    }
   }
 
   const selectedDayRequests = selectedDay ? dayReqs(selectedDay) : []
@@ -231,18 +247,18 @@ export default function DashboardPage() {
         <div className="animate-fade-up">
           <h1 className="text-lg font-bold text-gray-900 dark:text-white">MatchTime</h1>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            שלום {session?.name} · {getGreeting()}
+            שלום {session?.name} · {greeting}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Install PWA */}
-          {installPrompt && (
-            <button onClick={installPWA}
-              className="animate-pulse-ring flex items-center gap-1.5 text-xs bg-brand-500 text-white px-3 py-1.5 rounded-full font-medium">
+          {/* Install PWA — always visible unless already installed */}
+          {installPlatform !== 'installed' && installPlatform !== null && (
+            <button onClick={handleInstall}
+              className="flex items-center gap-1.5 text-xs bg-brand-500 hover:bg-brand-600 active:scale-95 text-white px-3 py-1.5 rounded-full font-medium transition-all shadow-sm">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-              התקן אפליקציה
+              התקן
             </button>
           )}
           {/* Settings gear */}
@@ -511,6 +527,64 @@ export default function DashboardPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ══ INSTALL MODAL ══ */}
+      {showInstallModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-sm p-6 animate-pop-in">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">📲 התקן את MatchTime</h3>
+              <button onClick={() => setShowInstallModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500">✕</button>
+            </div>
+
+            {installPlatform === 'ios' ? (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">להתקנה על iPhone / iPad:</p>
+                <div className="space-y-3">
+                  {[
+                    { step: '1', text: 'לחץ על כפתור השיתוף', icon: '⬆️', sub: 'בתחתית Safari' },
+                    { step: '2', text: 'בחר "הוסף למסך הבית"', icon: '➕', sub: 'Add to Home Screen' },
+                    { step: '3', text: 'לחץ "הוסף"', icon: '✅', sub: 'האפליקציה תופיע בדף הבית' },
+                  ].map(s => (
+                    <div key={s.step} className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700 rounded-xl p-3">
+                      <span className="text-2xl">{s.icon}</span>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{s.text}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{s.sub}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">להתקנה על Android:</p>
+                <div className="space-y-3">
+                  {[
+                    { step: '1', text: 'לחץ על תפריט Chrome', icon: '⋮', sub: '3 נקודות בפינה הימנית' },
+                    { step: '2', text: 'בחר "הוסף למסך הבית"', icon: '➕', sub: 'Add to Home Screen' },
+                    { step: '3', text: 'לחץ "הוסף"', icon: '✅', sub: 'האפליקציה תופיע בדף הבית' },
+                  ].map(s => (
+                    <div key={s.step} className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700 rounded-xl p-3">
+                      <span className="text-2xl font-bold text-brand-500">{s.icon}</span>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{s.text}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{s.sub}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button onClick={() => setShowInstallModal(false)}
+              className="w-full mt-5 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-xl py-2.5 transition-all active:scale-95">
+              הבנתי
+            </button>
+          </div>
         </div>
       )}
 
