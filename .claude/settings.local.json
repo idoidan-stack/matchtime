@@ -5,7 +5,8 @@
       "PowerShell(Get-Content \"C:\\\\Users\\\\iidan1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--PROJECT-matchtime\\\\18a4f65d-925f-40c1-9199-16e1a2fce7d1\\\\tasks\\\\brsle1387.output\" -Wait -Tail 20)",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }

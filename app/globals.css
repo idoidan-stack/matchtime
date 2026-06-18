@@ -6,11 +6,57 @@
 * { box-sizing: border-box; }
 body { font-family: 'Inter', system-ui, sans-serif; direction: rtl; }
 
-.slot-available   { @apply bg-emerald-100 border-emerald-400 text-emerald-800; }
-.slot-selected    { @apply bg-brand-500 border-brand-600 text-white; }
-.slot-unavailable { @apply bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed; }
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.92); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(0,212,200,0.4); }
+  70%  { box-shadow: 0 0 0 10px rgba(0,212,200,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,212,200,0); }
+}
 
-.day-green  { @apply bg-emerald-100 border-2 border-emerald-400; }
-.day-yellow { @apply bg-yellow-100 border-2 border-yellow-400; }
-.day-red    { @apply bg-red-100 border-2 border-red-400; }
-.day-empty  { @apply bg-white border-2 border-gray-200; }
+.animate-fade-up    { animation: fadeUp    0.35s ease both; }
+.animate-fade-in    { animation: fadeIn    0.25s ease both; }
+.animate-slide-right { animation: slideRight 0.3s ease both; }
+.animate-pop-in     { animation: popIn     0.25s cubic-bezier(.34,1.56,.64,1) both; }
+.animate-pulse-ring { animation: pulse-ring 1.5s infinite; }
+
+/* staggered children */
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 60ms; }
+.stagger > *:nth-child(3) { animation-delay: 120ms; }
+.stagger > *:nth-child(4) { animation-delay: 180ms; }
+.stagger > *:nth-child(5) { animation-delay: 240ms; }
+
+/* smooth theme transitions */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+/* but NOT layout/transform transitions globally */
+button, a { transition: all 0.15s ease; }
+
+/* ── Day cell classes ── */
+.slot-available   { @apply bg-emerald-100 border-emerald-400 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300; }
+.slot-selected    { @apply bg-brand-500 border-brand-600 text-white; }
+.slot-unavailable { @apply bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:border-gray-700; }
+
+.day-green  { @apply bg-emerald-100 border-2 border-emerald-400 dark:bg-emerald-900/40 dark:border-emerald-600; }
+.day-yellow { @apply bg-yellow-100 border-2 border-yellow-400 dark:bg-yellow-900/40 dark:border-yellow-600; }
+.day-red    { @apply bg-red-100 border-2 border-red-400 dark:bg-red-900/40 dark:border-red-600; }
+.day-empty  { @apply bg-white border-2 border-gray-200 dark:bg-gray-800 dark:border-gray-700; }

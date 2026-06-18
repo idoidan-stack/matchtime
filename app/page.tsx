@@ -53,8 +53,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100">
-      <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-10 w-full max-w-md animate-fade-up">
         {/* Logo / Title */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-500 mb-4">
@@ -63,8 +63,8 @@ export default function LoginPage() {
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">MatchTime</h1>
-          <p className="text-gray-500 text-sm mt-1">תיאום פגישות Reline × Partner</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">MatchTime</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">תיאום פגישות Reline × Partner</p>
         </div>
 
         <div className="space-y-4">

@@ -21,17 +21,17 @@ export interface Session {
 
 export function getSession(): Session | null {
   if (typeof window === 'undefined') return null
-  const raw = sessionStorage.getItem('matchtime_session')
+  const raw = localStorage.getItem('matchtime_session')
   if (!raw) return null
   try { return JSON.parse(raw) } catch { return null }
 }
 
 export function setSession(session: Session) {
-  sessionStorage.setItem('matchtime_session', JSON.stringify(session))
+  localStorage.setItem('matchtime_session', JSON.stringify(session))
 }
 
 export function clearSession() {
-  sessionStorage.removeItem('matchtime_session')
+  localStorage.removeItem('matchtime_session')
 }
 
 export function canAccess(session: Session | null, required: Role[]): boolean {
