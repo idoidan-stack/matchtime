@@ -198,6 +198,9 @@ export default function AvailabilityPage() {
 
   async function handleRequest(reqId: string, action: 'approved' | 'rejected') {
     await set(ref(db, `matchtime/requests/${reqId}/status`), action)
+    if (action === 'approved') {
+      await set(ref(db, `matchtime/requests/${reqId}/approvedAt`), Date.now())
+    }
 
     // SMS to requesting person
     const req = requests.find(r => r.id === reqId)
@@ -235,6 +238,27 @@ export default function AvailabilityPage() {
             className="text-sm text-gray-500 hover:text-red-600">התנתק</button>
         </div>
       </header>
+
+      {/* ── Pending-requests banner (relayn) ── */}
+      {pendingCount > 0 && (
+        <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 animate-fade-up">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🔔</span>
+            <div className="flex-1">
+              <p className="font-semibold text-amber-800 text-sm">
+                {pendingCount === 1
+                  ? 'יש בקשת תיאום אחת הממתינה לאישורך'
+                  : `יש ${pendingCount} בקשות תיאום הממתינות לאישורך`}
+              </p>
+              <p className="text-xs text-amber-600 mt-0.5">עבור לטאב <strong>אישורים</strong> כדי לאשר או לדחות</p>
+            </div>
+            <button onClick={() => setTab('approvals')}
+              className="text-xs bg-amber-500 hover:bg-amber-600 text-white font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95 whitespace-nowrap">
+              לאישורים ←
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="border-b border-gray-200 bg-white px-6">

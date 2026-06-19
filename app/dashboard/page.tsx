@@ -149,6 +149,8 @@ export default function DashboardPage() {
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [settingsPwd, setSettingsPwd]   = useState('')
   const [settingsErr, setSettingsErr]   = useState('')
+  const [newlyApproved, setNewlyApproved] = useState<any[]>([])
+  const [showApprovedBanner, setShowApprovedBanner] = useState(false)
 
   const monthKey        = format(currentMonth, 'yyyy-MM')
   const historyMonthKey = format(historyMonth, 'yyyy-MM')
@@ -211,10 +213,31 @@ export default function DashboardPage() {
     return () => unsubs.forEach(u => u())
   }, [monthKey])
 
-  // Requests
+  // Requests + detect newly-approved since last visit
   useEffect(() => {
+    const lastVisitKey = `lastVisit_${session?.userId}`
+    const lastVisit    = parseInt(localStorage.getItem(lastVisitKey) ?? '0', 10)
+    // Record NOW as last visit — banner will show on NEXT login
+    localStorage.setItem(lastVisitKey, String(Date.now()))
+
+    let bannerShown = false
     return onValue(ref(db, 'matchtime/requests'), snap => {
-      setRequests(snap.exists() ? Object.values(snap.val()) as any[] : [])
+      const all: any[] = snap.exists() ? Object.values(snap.val()) : []
+      setRequests(all)
+
+      // Only show banner once (on first data load), not on every Firebase update
+      if (!bannerShown) {
+        bannerShown = true
+        const mine = all.filter(r =>
+          r.requestedById === session?.userId &&
+          r.status === 'approved' &&
+          (r.approvedAt ?? 0) > lastVisit
+        )
+        if (mine.length > 0) {
+          setNewlyApproved(mine)
+          setShowApprovedBanner(true)
+        }
+      }
     })
   }, [])
 
@@ -387,6 +410,31 @@ export default function DashboardPage() {
           </button>
         </div>
       </header>
+
+      {/* ── Approved-requests banner (sales manager) ── */}
+      {showApprovedBanner && newlyApproved.length > 0 && (
+        <div className="bg-emerald-50 dark:bg-emerald-900/30 border-b border-emerald-200 dark:border-emerald-700 px-4 py-3 animate-fade-up">
+          <div className="max-w-5xl mx-auto flex items-start gap-3">
+            <span className="text-2xl mt-0.5">✅</span>
+            <div className="flex-1">
+              <p className="font-semibold text-emerald-800 dark:text-emerald-200 text-sm">
+                {newlyApproved.length === 1
+                  ? 'בקשתך אושרה!'
+                  : `${newlyApproved.length} בקשות אושרו מאז הכניסה האחרונה!`}
+              </p>
+              <div className="mt-1 space-y-0.5">
+                {newlyApproved.map(r => (
+                  <p key={r.id} className="text-xs text-emerald-700 dark:text-emerald-300">
+                    • {PERSON_LABELS[r.person as Person]} · {format(new Date(r.date), 'd MMM', { locale: he })} · {r.startTime}–{r.endTime}
+                  </p>
+                ))}
+              </div>
+            </div>
+            <button onClick={() => setShowApprovedBanner(false)}
+              className="text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300 text-lg leading-none mt-0.5">✕</button>
+          </div>
+        </div>
+      )}
 
       {/* ── Tabs ── */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4">
